@@ -1,4 +1,14 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Put,
+  Delete,
+  Body,
+  Param,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { NotesService } from './notes.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CreateNotePayload, UpdateNotePayload } from './notes.dto';
@@ -10,7 +20,10 @@ export class NotesController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new note' })
-  @ApiResponse({ status: 201, description: 'The note has been successfully created.' })
+  @ApiResponse({
+    status: 201,
+    description: 'The note has been successfully created.',
+  })
   async create(@Body() createNoteDto: CreateNotePayload) {
     return this.notesService.create(createNoteDto);
   }
@@ -32,15 +45,33 @@ export class NotesController {
   @Put(':id')
   @ApiOperation({ summary: 'Update a note by ID' })
   @ApiResponse({ status: 200, description: 'The updated note.' })
-  async update(@Param('id') id: string, @Body() updateNoteDto: UpdateNotePayload) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateNoteDto: UpdateNotePayload,
+  ) {
     return this.notesService.update(id, updateNoteDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a note by ID' })
-  @ApiResponse({ status: 204, description: 'The note has been successfully deleted.' })
+  @ApiResponse({
+    status: 204,
+    description: 'The note has been successfully deleted.',
+  })
   async delete(@Param('id') id: string) {
     await this.notesService.delete(id);
+  }
+
+  @Post('backup')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create an encrypted backup of all notes' })
+  @ApiResponse({
+    status: 201,
+    description: 'Backup has been successfully created.',
+  })
+  @ApiResponse({ status: 500, description: 'Failed to create backup.' })
+  async createBackup() {
+    await this.notesService.encryptedBackup();
   }
 }

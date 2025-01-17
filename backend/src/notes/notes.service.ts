@@ -5,6 +5,8 @@ import { Model } from 'mongoose';
 import { Database } from 'src/enums/database.enum';
 import { CreateNotePayload, UpdateNotePayload } from './notes.dto';
 import { Note } from 'src/shared/models/note.model';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class NotesService {
@@ -72,6 +74,32 @@ export class NotesService {
     const result = await this.noteModel.findByIdAndDelete(noteId).exec();
     if (!result) {
       throw new NotFoundException('Note not found');
+    }
+  }
+
+  async encryptedBackup(): Promise<void> {
+    try {
+      const notes = await this.noteModel.find().exec();
+      const encryptedNotes = notes.map((note) => ({
+        ...note.toObject(),
+        content: this.encryptText(note.content),
+      }));
+
+      const backupPath = path.join(__dirname, '..', '..', 'backups');
+      if (!fs.existsSync(backupPath)) {
+        fs.mkdirSync(backupPath);
+      }
+
+      const filePath = path.join(
+        backupPath,
+        `backup_${new Date().toISOString()}.json`,
+      );
+      fs.writeFileSync(filePath, JSON.stringify(encryptedNotes, null, 2));
+
+      console.log(`Backup completed successfully: ${filePath}`);
+    } catch (error) {
+      console.error(`Failed to create backup: ${error.message}`);
+      throw new Error('Backup failed');
     }
   }
 }
