@@ -1,45 +1,175 @@
-import React from "react";
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from "react-native";
+import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { FontAwesome } from '@expo/vector-icons';
+import * as SecureStore from "expo-secure-store";
+import React, { useState } from "react";
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function Register() {
-  const router = useRouter(); // Obsługa nawigacji
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    email: "",
+    firstName: "",
+    lastName: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const validateForm = () => {
+    if (
+      !formData.email ||
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.password ||
+      !formData.confirmPassword
+    ) {
+      Alert.alert("Błąd", "Wszystkie pola są wymagane");
+      return false;
+    }
+
+    if (!formData.email.includes("@")) {
+      Alert.alert("Błąd", "Podaj prawidłowy adres email");
+      return false;
+    }
+
+    if (formData.password.length < 6) {
+      Alert.alert("Błąd", "Hasło musi mieć minimum 6 znaków");
+      return false;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      Alert.alert("Błąd", "Hasła nie są identyczne");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleRegister = async () => {
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("https://localhost:3000/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (data.token) {
+          await SecureStore.setItemAsync("userToken", data.token);
+        }
+        Alert.alert("Sukces", "Konto zostało utworzone", [
+          {
+            text: "OK",
+            onPress: () => router.push("/dashboard"),
+          },
+        ]);
+      } else {
+        Alert.alert(
+          "Błąd",
+          data.message || "Wystąpił błąd podczas rejestracji"
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        "Błąd",
+        "Nie można połączyć się z serwerem. Sprawdź połączenie internetowe."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
-   
       <Text style={styles.header}>Zarejestruj się:</Text>
 
       <View style={styles.form}>
         <Text style={styles.label}>Podaj email:</Text>
-        <TextInput style={styles.input} placeholder="Wpisz email" />
+        <TextInput
+          style={styles.input}
+          placeholder="Wpisz email"
+          value={formData.email}
+          onChangeText={(text) => setFormData({ ...formData, email: text })}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
 
         <Text style={styles.label}>Podaj imię:</Text>
-        <TextInput style={styles.input} placeholder="Wpisz imię" />
+        <TextInput
+          style={styles.input}
+          placeholder="Wpisz imię"
+          value={formData.firstName}
+          onChangeText={(text) => setFormData({ ...formData, firstName: text })}
+        />
 
         <Text style={styles.label}>Podaj nazwisko:</Text>
-        <TextInput style={styles.input} placeholder="Wpisz nazwisko" />
+        <TextInput
+          style={styles.input}
+          placeholder="Wpisz nazwisko"
+          value={formData.lastName}
+          onChangeText={(text) => setFormData({ ...formData, lastName: text })}
+        />
 
         <Text style={styles.label}>Podaj hasło:</Text>
-        <TextInput style={styles.input} placeholder="Wpisz hasło" secureTextEntry />
+        <TextInput
+          style={styles.input}
+          placeholder="Wpisz hasło"
+          secureTextEntry
+          value={formData.password}
+          onChangeText={(text) => setFormData({ ...formData, password: text })}
+        />
 
         <Text style={styles.label}>Powtórz hasło:</Text>
-        <TextInput style={styles.input} placeholder="Wpisz hasło" secureTextEntry />
+        <TextInput
+          style={styles.input}
+          placeholder="Wpisz hasło"
+          secureTextEntry
+          value={formData.confirmPassword}
+          onChangeText={(text) =>
+            setFormData({ ...formData, confirmPassword: text })
+          }
+        />
 
-       
         <TouchableOpacity
-          style={styles.button}
-          onPress={() => alert("Zarejestrowano!")}
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={handleRegister}
+          disabled={isLoading}
         >
-          <Text style={styles.buttonText}>Zarejestruj się</Text>
+          <Text style={styles.buttonText}>
+            {isLoading ? "Rejestracja..." : "Zarejestruj się"}
+          </Text>
         </TouchableOpacity>
 
-       
         <TouchableOpacity
           style={styles.homeButton}
-          onPress={() => router.push('/')}>
-               <FontAwesome name="home" size={20} color="#007bff" style={styles.icon} />
+          onPress={() => router.push("/")}
+        >
+          <FontAwesome
+            name="home"
+            size={20}
+            color="#007bff"
+            style={styles.icon}
+          />
         </TouchableOpacity>
       </View>
     </View>
@@ -100,9 +230,9 @@ const styles = StyleSheet.create({
   },
   homeButton: {
     marginTop: 8,
-    flexDirection: 'row', 
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   icon: {
     marginRight: 8,
@@ -112,5 +242,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
     textAlign: "center",
     fontWeight: "bold",
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
 });

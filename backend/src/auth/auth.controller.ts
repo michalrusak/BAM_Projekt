@@ -50,7 +50,7 @@ export class AuthController {
       httpOnly: true,
       maxAge: Number(process.env.EXPIRE_TIME),
     });
-    return res.status(HttpStatus.OK).json({ user });
+    return res.status(HttpStatus.OK).json({ user, token });
   }
 
   @Get(EndPoints.logout)
