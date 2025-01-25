@@ -10,6 +10,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import {BACKEND_URL} from '@env'
+
+const API_URL = BACKEND_URL + "/auth/register";
 
 export default function Register() {
   const router = useRouter();
@@ -58,7 +61,7 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("https://192.168.1.108:3000/auth/register", {
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

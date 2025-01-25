@@ -11,6 +11,7 @@ import { useRouter } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { BACKEND_URL } from '@env'
 
 export default function Login() {
   const { storeAuthData } = useAuth();
@@ -18,7 +19,7 @@ export default function Login() {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
+  const API_URL = BACKEND_URL + "/auth/login";
   const handleLogin = async () => {
     if (!login || !password) {
       Alert.alert("Błąd", "Proszę wypełnić wszystkie pola");
@@ -28,7 +29,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://192.168.1.108:3000/auth/login", {
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
