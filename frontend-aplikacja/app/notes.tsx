@@ -1,4 +1,3 @@
-// app/notes.tsx
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -12,9 +11,10 @@ import {
 } from "react-native";
 import { useNotes } from "../hooks/useNotes";
 import * as SecureStore from "expo-secure-store";
-
+import 'react-native-get-random-values';
+import CryptoJS from 'crypto-js';
 interface Note {
-  id?: string;
+  _id?: string;
   title: string;
   content: string;
   userId: string;
@@ -67,9 +67,9 @@ export default function NotesScreen() {
         return;
       }
 
-      if (editingNote?.id) {
+      if (editingNote?._id) {
         await updateNote(
-          editingNote.id,
+          editingNote._id,
           { title, content },
           ENCRYPTION_KEY
         );
@@ -116,7 +116,7 @@ export default function NotesScreen() {
 
       <FlatList
         data={notes}
-        keyExtractor={(item) => item.id || Math.random().toString()}
+        keyExtractor={(item) => item._id || Math.random().toString()}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.noteItem}
@@ -133,7 +133,7 @@ export default function NotesScreen() {
             </Text>
             <TouchableOpacity
               style={styles.deleteButton}
-              onPress={() => handleDeleteNote(item.id!)}
+              onPress={() => handleDeleteNote(item._id!)}
             >
               <Text style={styles.deleteButtonText}>Delete</Text>
             </TouchableOpacity>

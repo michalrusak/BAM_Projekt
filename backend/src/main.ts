@@ -10,10 +10,13 @@ async function bootstrap() {
     cert: fs.readFileSync(path.join(__dirname, '..', 'src', 'cert', 'cert.pem')),
   };
 
-  const app = await NestFactory.create(AppModule, { httpsOptions });
+  const httpsApp = await NestFactory.create(AppModule, { httpsOptions });
+  
+  // HTTP App
+  const httpApp = await NestFactory.create(AppModule);
 
-  app.enableCors({
-    origin: ['http://localhost:8081'],
+  httpsApp.enableCors({
+    origin: '*',
     methods: 'GET,PUT,POST,DELETE, PATCH',
     allowedHeaders: 'Content-Type, Accept',
     credentials: true,
@@ -23,9 +26,13 @@ async function bootstrap() {
     .setTitle('Secure Notes API')
     .setVersion('1.0')
     .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  const document = SwaggerModule.createDocument(httpApp, config);
+  SwaggerModule.setup('api', httpApp, document);
 
-  await app.listen(3000);
+  await Promise.all([
+    httpsApp.listen(3001), // HTTPS
+    httpApp.listen(3000), // HTTP
+  ]);
+
 }
 bootstrap();

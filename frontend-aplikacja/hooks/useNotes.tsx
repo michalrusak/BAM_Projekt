@@ -1,30 +1,45 @@
 import * as SecureStore from "expo-secure-store";
 import CryptoJS from "crypto-js";
+import 'react-native-get-random-values';
 
 interface Note {
-  id?: string;
+  _id?: string;
   title: string;
   content: string;
   userId: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
-
+declare module 'crypto-js' {
+  interface WordArray {
+    random: (length: number) => WordArray;
+  }
+}
+CryptoJS.lib.WordArray.random = function(length: number) {
+  const words: number[] = [];
+  const r = (arr: Uint8Array) => {
+    for (let i = 0; i < arr.length; i++) {
+      words.push(arr[i]);
+    }
+  };
+  r(crypto.getRandomValues(new Uint8Array(length)));
+  return CryptoJS.lib.WordArray.create(words, length);
+};
 export const useNotes = () => {
-  const API_URL = "https://localhost:3000/notes";
+  const API_URL = "http://192.168.1.108:3000/notes";
   
-  const encryptText = (text: string, key: string): string => {
+  const encrypt = (text: string, key: string): string => {
     return CryptoJS.AES.encrypt(text, key).toString();
   };
 
-  const decryptText = (ciphertext: string, key: string): string => {
+  const decrypt = (ciphertext: string, key: string): string => {
     const bytes = CryptoJS.AES.decrypt(ciphertext, key);
     return bytes.toString(CryptoJS.enc.Utf8);
   };
 
   const createNote = async (note: Note, encryptionKey: string) => {
     try {
-      const encryptedContent = encryptText(note.content, encryptionKey);
+      const encryptedContent = encrypt(note.content, encryptionKey);
       const response = await fetch(API_URL, {
         method: "POST",
         headers: {
@@ -48,7 +63,7 @@ export const useNotes = () => {
       const notes = await response.json();
       return notes.map((note: Note) => ({
         ...note,
-        content: decryptText(note.content, encryptionKey),
+        content: decrypt(note.content, encryptionKey),
       }));
     } catch (error) {
       console.error("Error fetching notes:", error);
@@ -63,7 +78,7 @@ export const useNotes = () => {
   ) => {
     try {
       const encryptedContent = updates.content 
-        ? encryptText(updates.content, encryptionKey)
+        ? encrypt(updates.content, encryptionKey)
         : undefined;
       
       const response = await fetch(`${API_URL}/${noteId}`, {

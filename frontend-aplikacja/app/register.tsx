@@ -80,7 +80,7 @@ export default function Register() {
         Alert.alert("Sukces", "Konto zostało utworzone", [
           {
             text: "OK",
-            onPress: () => router.push("/dashboard"),
+            onPress: () => router.push("/login"),
           },
         ]);
       } else {

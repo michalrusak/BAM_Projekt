@@ -10,9 +10,10 @@ import {
 import { useRouter } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import { useState } from "react";
-import * as SecureStore from "expo-secure-store";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Login() {
+  const { storeAuthData } = useAuth();
   const router = useRouter();
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +28,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("https://192.168.1.108:3000/auth/login", {
+      const response = await fetch("http://192.168.1.108:3000/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -41,9 +42,9 @@ export default function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        await SecureStore.setItemAsync("userToken", data.token);
+        await storeAuthData(data.token);
         Alert.alert("Sukces", "Zalogowano pomyślnie");
-        router.push("/notes"); 
+        router.push("/notes");
       } else {
         Alert.alert("Błąd", data.message || "Wystąpił błąd podczas logowania");
       }
