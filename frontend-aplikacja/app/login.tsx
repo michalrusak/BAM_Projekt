@@ -43,7 +43,7 @@ export default function Login() {
       if (response.ok) {
         await SecureStore.setItemAsync("userToken", data.token);
         Alert.alert("Sukces", "Zalogowano pomyślnie");
-        router.push("/dashboard"); // lub inna strona po zalogowaniu
+        router.push("/notes"); 
       } else {
         Alert.alert("Błąd", data.message || "Wystąpił błąd podczas logowania");
       }

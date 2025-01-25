@@ -1,30 +1,41 @@
 import * as SecureStore from "expo-secure-store";
+import jwtDecode from "jwt-decode";
+
+interface DecodedToken {
+  _id: string;
+  email: string;
+}
 
 export const useAuth = () => {
-  const storeToken = async (token) => {
+  const storeAuthData = async (token: string) => {
     try {
+      const decoded = jwtDecode<DecodedToken>(token);
       await SecureStore.setItemAsync("userToken", token);
+      await SecureStore.setItemAsync("userId", decoded._id);
     } catch (error) {
-      console.error("Error storing token:", error);
+      console.error("Error storing auth data:", error);
     }
   };
 
-  const getToken = async () => {
+  const getAuthData = async () => {
     try {
-      return await SecureStore.getItemAsync("userToken");
+      const token = await SecureStore.getItemAsync("userToken");
+      const userId = await SecureStore.getItemAsync("userId");
+      return { token, userId };
     } catch (error) {
-      console.error("Error getting token:", error);
-      return null;
+      console.error("Error getting auth data:", error);
+      return { token: null, userId: null };
     }
   };
 
-  const removeToken = async () => {
+  const removeAuthData = async () => {
     try {
       await SecureStore.deleteItemAsync("userToken");
+      await SecureStore.deleteItemAsync("userId");
     } catch (error) {
-      console.error("Error removing token:", error);
+      console.error("Error removing auth data:", error);
     }
   };
 
-  return { storeToken, getToken, removeToken };
+  return { storeAuthData, getAuthData, removeAuthData };
 };

@@ -12,7 +12,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { httpsOptions });
 
   app.enableCors({
-    origin: ['http://localhost:8081'],
+    origin: ['http://localhost:8081,https://*.ngrok-free.app'],
     methods: 'GET,PUT,POST,DELETE, PATCH',
     allowedHeaders: 'Content-Type, Accept',
     credentials: true,

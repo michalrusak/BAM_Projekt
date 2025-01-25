@@ -2,7 +2,7 @@ import { Text, View, Button } from "react-native";
 import { useRouter } from "expo-router";
 
 export default function Index() {
-  const router = useRouter(); // Hook do obsługi nawigacji
+  const router = useRouter(); 
 
   return (
     <View
@@ -14,7 +14,7 @@ export default function Index() {
     >
       <Button
         title="Przejdź do logowania"
-        onPress={() => router.push("/login")} // Używamy router.push do nawigacji
+        onPress={() => router.push("/login")} 
       />
     </View>
   );
