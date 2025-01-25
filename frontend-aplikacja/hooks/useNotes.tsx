@@ -1,7 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import CryptoJS from "crypto-js";
-import 'react-native-get-random-values';
-import {BACKEND_URL} from '@env'
+import "react-native-get-random-values";
+import { EXPO_PUBLIC_BACKEND_URL } from "@env";
 
 interface Note {
   id?: string;
@@ -11,12 +11,12 @@ interface Note {
   createdAt?: Date;
   updatedAt?: Date;
 }
-declare module 'crypto-js' {
+declare module "crypto-js" {
   interface WordArray {
     random: (length: number) => WordArray;
   }
 }
-CryptoJS.lib.WordArray.random = function(length: number) {
+CryptoJS.lib.WordArray.random = function (length: number) {
   const words: number[] = [];
   const r = (arr: Uint8Array) => {
     for (let i = 0; i < arr.length; i++) {
@@ -27,8 +27,8 @@ CryptoJS.lib.WordArray.random = function(length: number) {
   return CryptoJS.lib.WordArray.create(words, length);
 };
 export const useNotes = () => {
-  const API_URL = BACKEND_URL + "/notes"
-  
+  const API_URL = EXPO_PUBLIC_BACKEND_URL + "/notes";
+
   const encrypt = (text: string, key: string): string => {
     return CryptoJS.AES.encrypt(text, key).toString();
   };
@@ -78,10 +78,10 @@ export const useNotes = () => {
     encryptionKey: string
   ) => {
     try {
-      const encryptedContent = updates.content 
+      const encryptedContent = updates.content
         ? encrypt(updates.content, encryptionKey)
         : undefined;
-      
+
       const response = await fetch(`${API_URL}/${noteId}`, {
         method: "PUT",
         headers: {

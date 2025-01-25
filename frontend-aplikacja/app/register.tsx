@@ -10,9 +10,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import {BACKEND_URL} from '@env'
+import { EXPO_PUBLIC_BACKEND_URL } from "@env";
 
-const API_URL = BACKEND_URL + "/auth/register";
+const API_URL = EXPO_PUBLIC_BACKEND_URL + "/auth/register";
 
 export default function Register() {
   const router = useRouter();
