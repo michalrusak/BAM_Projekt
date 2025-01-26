@@ -74,4 +74,11 @@ export class NotesController {
   async createBackup() {
     await this.notesService.encryptedBackup();
   }
+
+  @Post('restore')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Restore notes from a backup file' })
+  async restoreBackup(@Body('filePath') filePath: string) {
+    await this.notesService.restoreFromBackup(filePath);
+  }
 }
