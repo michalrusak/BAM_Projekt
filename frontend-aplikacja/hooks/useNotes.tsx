@@ -1,7 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import CryptoJS from "crypto-js";
 import "react-native-get-random-values";
-import { EXPO_PUBLIC_BACKEND_URL } from "@env";
+
 
 interface Note {
   id?: string;
@@ -27,7 +27,7 @@ CryptoJS.lib.WordArray.random = function (length: number) {
   return CryptoJS.lib.WordArray.create(words, length);
 };
 export const useNotes = () => {
-  const API_URL = EXPO_PUBLIC_BACKEND_URL + "/notes";
+  const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + "/notes";
 
   const encrypt = (text: string, key: string): string => {
     return CryptoJS.AES.encrypt(text, key).toString();

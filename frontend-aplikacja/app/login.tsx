@@ -11,7 +11,7 @@ import { useRouter } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { EXPO_PUBLIC_BACKEND_URL } from '@env'
+
 
 export default function Login() {
   const { storeAuthData } = useAuth();
@@ -19,7 +19,7 @@ export default function Login() {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const API_URL = EXPO_PUBLIC_BACKEND_URL + "/auth/login";
+  const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + "/auth/login";
   const handleLogin = async () => {
     if (!login || !password) {
       Alert.alert("Błąd", "Proszę wypełnić wszystkie pola");
