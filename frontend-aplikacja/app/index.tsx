@@ -1,21 +1,37 @@
 import { useEffect, useState } from "react";
-import { Text, View, TouchableOpacity, StyleSheet } from "react-native";
+import { Text, View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { useAuth } from "../hooks/useAuth";  
+import {jwtDecode} from "jwt-decode";
+import { useAuth } from "../hooks/useAuth";
+
+interface DecodedToken {
+  exp: number; // Data wygaśnięcia tokenu w formacie UNIX
+}
 
 export default function Index() {
   const router = useRouter();
   const { getAuthData } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
+  const isTokenValid = (token: string): boolean => {
+    try {
+      const decoded = jwtDecode<DecodedToken>(token);
+      const currentTime = Math.floor(Date.now() / 1000); // Aktualny czas w sekundach
+      return decoded.exp > currentTime; // Token jest ważny, jeśli exp > currentTime
+    } catch (error) {
+      console.error("Error decoding token:", error);
+      return false; // Jeśli token jest błędny, uznajemy go za nieważny
+    }
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       const { token } = await getAuthData();
-      if (token) {
-        // Jeśli token istnieje
+      if (token && isTokenValid(token)) {
+        // Token istnieje i jest ważny
         router.push("/notes");
       } else {
-        // Jeśli tokenu nie ma
+        // Token jest nieważny lub go brak
         router.push("/login");
       }
       setIsLoading(false);
@@ -25,7 +41,7 @@ export default function Index() {
   }, []);
 
   if (isLoading) {
-    // Możesz dodać jakąś animację lub ekran ładowania
+    // Ekran ładowania
     return (
       <View style={styles.container}>
         <Text style={styles.header}>Ładowanie...</Text>
@@ -33,7 +49,7 @@ export default function Index() {
     );
   }
 
-  return null; // Strona nie będzie wyświetlana, gdy już przekieruje do loginu lub notes
+  return null; // Nie wyświetla nic, bo użytkownik jest przekierowany
 }
 
 const styles = StyleSheet.create({

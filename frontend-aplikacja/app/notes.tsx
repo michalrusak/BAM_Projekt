@@ -12,6 +12,8 @@ import {
 import { useNotes } from "../hooks/useNotes";
 import * as SecureStore from "expo-secure-store";
 import 'react-native-get-random-values';
+import { useRouter } from "expo-router";
+import * as FileSystem from 'expo-file-system';
 import CryptoJS from 'crypto-js';
 interface Note {
   _id?: string;
@@ -23,12 +25,14 @@ interface Note {
 }
 
 export default function NotesScreen() {
+  const router = useRouter();
   const [notes, setNotes] = useState<Note[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + "/notes";
 
   const { createNote, getNotes, updateNote, deleteNote } = useNotes();
   const ENCRYPTION_KEY = "your-secret-key"; 
@@ -99,6 +103,79 @@ export default function NotesScreen() {
     }
   };
 
+  const handleCreateBackup = async () => {
+    try {
+      setIsLoading(true);
+      const backupFileName = "notes_backup.json"; // Nazwa pliku kopii zapasowej
+      const backupFilePath = `${FileSystem.documentDirectory}${backupFileName}`;
+  
+      // Tworzenie zawartości kopii zapasowej
+      const encryptedNotes = notes.map((note) => ({
+        ...note,
+        content: CryptoJS.AES.encrypt(note.content, ENCRYPTION_KEY).toString(),
+      }));
+      const backupContent = JSON.stringify(encryptedNotes);
+  
+      // Zapisywanie do lokalnego pliku
+      await FileSystem.writeAsStringAsync(backupFilePath, backupContent, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+  
+      Alert.alert("Backup", `Backup został zapisany w ${backupFilePath}`);
+    } catch (error) {
+      Alert.alert("Error", "Nie udało się utworzyć kopii zapasowej.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRestoreBackup = async () => {
+    try {
+      setIsLoading(true);
+      const backupFileName = "notes_backup.json"; // Nazwa pliku kopii zapasowej
+      const backupFilePath = `${FileSystem.documentDirectory}${backupFileName}`;
+  
+      // Sprawdzenie, czy plik istnieje
+      const fileInfo = await FileSystem.getInfoAsync(backupFilePath);
+      if (!fileInfo.exists) {
+        Alert.alert("Restore", "Nie znaleziono kopii zapasowej.");
+        return;
+      }
+  
+      // Odczyt zawartości pliku
+      const backupContent = await FileSystem.readAsStringAsync(backupFilePath, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+  
+      // Odszyfrowanie notatek
+      const decryptedNotes = JSON.parse(backupContent).map((note: any) => ({
+        ...note,
+        content: CryptoJS.AES.decrypt(note.content, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8),
+      }));
+  
+      setNotes(decryptedNotes);
+      Alert.alert("Restore", "Notatki zostały przywrócone z kopii zapasowej.");
+    } catch (error) {
+      Alert.alert("Error", "Nie udało się przywrócić notatek.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Usuwamy token, który jest odpowiedzialny za autentykację
+      await SecureStore.deleteItemAsync("userToken");
+      // Usuwamy też userId, jeśli chcesz całkowicie wyczyścić dane użytkownika
+      await SecureStore.deleteItemAsync("userId");
+      
+      Alert.alert("Logged out", "You have been logged out.");
+      router.push("/login");
+    } catch (error) {
+      Alert.alert("Error", "Could not log out. Please try again.");
+    }
+  };
+
   const clearForm = () => {
     setTitle("");
     setContent("");
@@ -113,6 +190,26 @@ export default function NotesScreen() {
       >
         <Text style={styles.addButtonText}>Add New Note</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+  style={styles.button2}
+  onPress={handleCreateBackup}
+  disabled={isLoading}
+>
+  <Text style={styles.buttonText2}>
+    {isLoading ? "Creating Backup..." : "Create Encrypted Backup"}
+  </Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+  style={styles.button2}
+  onPress={handleRestoreBackup}
+  disabled={isLoading}
+>
+  <Text style={styles.buttonText2}>
+    {isLoading ? "Restoring..." : "Restore Notes from Backup"}
+  </Text>
+</TouchableOpacity>
 
       <FlatList
         data={notes}
@@ -189,6 +286,12 @@ export default function NotesScreen() {
           </View>
         </View>
       </Modal>
+      <TouchableOpacity
+        style={styles.logoutButton}
+        onPress={handleLogout}
+      >
+        <Text style={styles.logoutButtonText}>Log out</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -285,4 +388,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+  logoutButton: {
+    backgroundColor: "#FF3B30", // Red color for logout
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  logoutButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+
+  button2: {
+    backgroundColor: "#007AFF", // Niebieski kolor dla obu przycisków
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  buttonText2: {
+    color: "white",
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  
 });

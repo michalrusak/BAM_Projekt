@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import { TouchableOpacity, Text } from "react-native";
 
 export default function RootLayout() {
   return (
@@ -11,6 +12,7 @@ export default function RootLayout() {
         options={{
           headerTitle: "Secure Notes",
           headerBackTitle: "Back",
+          headerBackVisible: false,
         }}
       />
     </Stack>
