@@ -102,4 +102,28 @@ export class NotesService {
       throw new Error('Backup failed');
     }
   }
+
+  async restoreFromBackup(filePath: string): Promise<void> {
+    try {
+      const backupData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+
+      await this.noteModel.deleteMany({});
+
+      const restoredNotes = backupData.map((noteData) => {
+        const decryptedContent = this.decryptText(noteData.content);
+
+        return new this.noteModel({
+          ...noteData,
+          content: decryptedContent,
+        });
+      });
+
+      await this.noteModel.insertMany(restoredNotes);
+
+      console.log(`Backup restored successfully from: ${filePath}`);
+    } catch (error) {
+      console.error(`Failed to restore backup: ${error.message}`);
+      throw new Error('Backup restoration failed');
+    }
+  }
 }
