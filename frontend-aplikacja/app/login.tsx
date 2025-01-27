@@ -12,7 +12,6 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 
-
 export default function Login() {
   const { storeAuthData } = useAuth();
   const router = useRouter();
@@ -113,6 +112,13 @@ export default function Login() {
             style={styles.icon}
           />
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.panicButton}
+          onPress={() => router.push("/panicModeScreen")}
+        >
+          <Text style={styles.panicButtonText}>Panic Mode</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -192,6 +198,17 @@ const styles = StyleSheet.create({
   homeText: {
     color: "#007bff",
     fontSize: 16,
+    fontWeight: "bold",
+  },
+  panicButton: {
+    backgroundColor: "#ff0000",
+    padding: 15,
+    borderRadius: 5,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  panicButtonText: {
+    color: "#fff",
     fontWeight: "bold",
   },
 });

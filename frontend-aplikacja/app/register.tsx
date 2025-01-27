@@ -58,43 +58,35 @@ export default function Register() {
     if (!validateForm()) return;
 
     setIsLoading(true);
-
     try {
       const response = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email: formData.email,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          password: formData.password,
-        }),
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
 
-      if (response.ok) {
-        if (data.token) {
-          await SecureStore.setItemAsync("userToken", data.token);
-        }
-        Alert.alert("Sukces", "Konto zostało utworzone", [
+      if (!response.ok) {
+        throw new Error("Registration failed");
+      }
+
+      Alert.alert(
+        "Success",
+        `Registration successful! Please save these recovery words:\n\n${data.recoveryPhrase}`,
+        [
           {
             text: "OK",
-            onPress: () => router.push("/login"),
+            onPress: () => router.replace("/login"),
           },
-        ]);
-      } else {
-        Alert.alert(
-          "Błąd",
-          data.message || "Wystąpił błąd podczas rejestracji"
-        );
-      }
+        ]
+      );
     } catch (error) {
       Alert.alert(
-        "Błąd",
-        "Nie można połączyć się z serwerem. Sprawdź połączenie internetowe."
+        "Error",
+        error instanceof Error ? error.message : "Registration failed"
       );
     } finally {
       setIsLoading(false);
