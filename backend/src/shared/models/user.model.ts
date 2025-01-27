@@ -5,6 +5,8 @@ export const UserSchema = new mongoose.Schema({
   password: String,
   firstName: String,
   lastName: String,
+  recoveryPhrase: String,
+  panicMode: { type: Boolean, default: false },
 });
 
 export interface User extends mongoose.Document {
@@ -12,4 +14,6 @@ export interface User extends mongoose.Document {
   password: string;
   firstName: string;
   lastName: string;
+  recoveryPhrase: string;
+  panicMode: boolean;
 }

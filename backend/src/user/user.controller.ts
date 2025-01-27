@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { EndPoints } from 'src/enums/endPoints.enum';
 import { UserService } from './user.service';
-import { ChangePasswordPayload, UpdateUserPayload } from './user.dto';
+import { ChangePasswordPayload, PanicButtonPayload, UpdateUserPayload } from './user.dto';
 import { Response } from 'express';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -93,4 +93,23 @@ export class UserController {
       .status(HttpStatus.OK)
       .json({ message: 'User account deleted successfully' });
   }
+  @Post('panic-mode')
+@ApiOperation({ summary: 'Activate panic mode' })
+async activatePanicMode(
+  @Body() panicButtonPayload: PanicButtonPayload,
+  @Res() res: Response,
+) {
+  await this.userService.activatePanicMode(panicButtonPayload);
+  return res.status(HttpStatus.OK).json({ message: 'Panic mode activated' });
+}
+
+@Post('panic-mode/reverse')
+@ApiOperation({ summary: 'Deactivate panic mode' })
+async deactivatePanicMode(
+  @Body() panicButtonPayload: PanicButtonPayload,
+  @Res() res: Response,
+) {
+  await this.userService.deactivatePanicMode(panicButtonPayload);
+  return res.status(HttpStatus.OK).json({ message: 'Panic mode deactivated' });
+}
 }

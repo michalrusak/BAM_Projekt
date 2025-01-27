@@ -38,3 +38,16 @@ export class ChangePasswordPayload {
   })
   newPassword: string;
 }
+export class PanicButtonPayload {
+  @ApiProperty({
+    description: 'User email',
+    example: 'user@example.com'
+  })
+  email: string;
+
+  @ApiProperty({
+    description: 'Recovery phrase',
+    example: 'apple beach cloud dream earth'
+  })
+  recoveryPhrase: string;
+}

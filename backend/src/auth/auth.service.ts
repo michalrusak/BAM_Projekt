@@ -8,13 +8,18 @@ import { LoginPayload, RegisterPayload } from './auth.dto';
 import { safeParse } from 'valibot';
 import { LoginPayloadSchema, RegisterPayloadSchema } from './auth.schema';
 import { Database } from 'src/enums/database.enum';
+import { RECOVERY_WORDS } from 'src/dictionaries/Recovery_words';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(Database.user) private readonly userModel: Model<User>,
   ) {}
-
+  
+  private generateRecoveryPhrase(): string {
+    const shuffled = [...RECOVERY_WORDS].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 10).join(' ');
+  }
   async register(registerPayload: RegisterPayload): Promise<User> {
     const result = safeParse(RegisterPayloadSchema, registerPayload);
 
@@ -29,11 +34,13 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(registerPayload.password, 10);
+    const recoveryPhrase = this.generateRecoveryPhrase();
     const newUser = await this.userModel.create({
       email: registerPayload.email,
       password: hashedPassword,
       firstName: registerPayload.firstName,
       lastName: registerPayload.lastName,
+      recoveryPhrase: recoveryPhrase,
     });
     return newUser.save();
   }

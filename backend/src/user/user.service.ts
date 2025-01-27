@@ -3,18 +3,20 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Database } from 'src/enums/database.enum';
 import { User } from 'src/shared/models/user.model';
-import { ChangePasswordPayload, UpdateUserPayload } from './user.dto';
+import { ChangePasswordPayload, PanicButtonPayload, UpdateUserPayload } from './user.dto';
 import {
   ChangePasswordPayloadSchema,
   UpdateUserPayloadSchema,
 } from './user.schema';
 import { safeParse } from 'valibot';
 import * as bcrypt from 'bcrypt';
+import { Note } from 'src/shared/models/note.model';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(Database.user) private readonly userModel: Model<User>,
+    @InjectModel(Database.note) private readonly noteModel: Model<Note>
   ) {}
 
   async getUserInfo(userId: string) {
@@ -34,7 +36,34 @@ export class UserService {
       lastName: user.lastName,
     };
   }
+  async activatePanicMode(panicButtonPayload: PanicButtonPayload) {
+    const user = await this.userModel.findOne({ 
+      email: panicButtonPayload.email,
+      recoveryPhrase: panicButtonPayload.recoveryPhrase 
+    });
 
+    if (!user) {
+      throw new HttpException('Invalid credentials', HttpStatus.BAD_REQUEST);
+    }
+
+    await this.noteModel.deleteMany({ userId: user._id });
+    user.panicMode = true;
+    await user.save();
+  }
+
+  async deactivatePanicMode(panicButtonPayload: PanicButtonPayload) {
+    const user = await this.userModel.findOne({ 
+      email: panicButtonPayload.email,
+      recoveryPhrase: panicButtonPayload.recoveryPhrase 
+    });
+
+    if (!user) {
+      throw new HttpException('Invalid credentials', HttpStatus.BAD_REQUEST);
+    }
+
+    user.panicMode = false;
+    await user.save();
+  }
   async updateUser(userId: string, updateUserPayload: UpdateUserPayload) {
     if (!userId) {
       throw new HttpException('Invalid credentials', HttpStatus.BAD_REQUEST);
