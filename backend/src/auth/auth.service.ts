@@ -15,7 +15,7 @@ export class AuthService {
   constructor(
     @InjectModel(Database.user) private readonly userModel: Model<User>,
   ) {}
-  
+
   private generateRecoveryPhrase(): string {
     const shuffled = [...RECOVERY_WORDS].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, 10).join(' ');

@@ -3,7 +3,11 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Database } from 'src/enums/database.enum';
 import { User } from 'src/shared/models/user.model';
-import { ChangePasswordPayload, PanicButtonPayload, UpdateUserPayload } from './user.dto';
+import {
+  ChangePasswordPayload,
+  PanicButtonPayload,
+  UpdateUserPayload,
+} from './user.dto';
 import {
   ChangePasswordPayloadSchema,
   UpdateUserPayloadSchema,
@@ -16,7 +20,7 @@ import { Note } from 'src/shared/models/note.model';
 export class UserService {
   constructor(
     @InjectModel(Database.user) private readonly userModel: Model<User>,
-    @InjectModel(Database.note) private readonly noteModel: Model<Note>
+    @InjectModel(Database.note) private readonly noteModel: Model<Note>,
   ) {}
 
   async getUserInfo(userId: string) {
@@ -37,9 +41,9 @@ export class UserService {
     };
   }
   async activatePanicMode(panicButtonPayload: PanicButtonPayload) {
-    const user = await this.userModel.findOne({ 
+    const user = await this.userModel.findOne({
       email: panicButtonPayload.email,
-      recoveryPhrase: panicButtonPayload.recoveryPhrase 
+      recoveryPhrase: panicButtonPayload.recoveryPhrase,
     });
 
     if (!user) {
@@ -52,9 +56,9 @@ export class UserService {
   }
 
   async deactivatePanicMode(panicButtonPayload: PanicButtonPayload) {
-    const user = await this.userModel.findOne({ 
+    const user = await this.userModel.findOne({
       email: panicButtonPayload.email,
-      recoveryPhrase: panicButtonPayload.recoveryPhrase 
+      recoveryPhrase: panicButtonPayload.recoveryPhrase,
     });
 
     if (!user) {
@@ -157,5 +161,14 @@ export class UserService {
     if (!existingUser) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
+  }
+  async getPanicModeStatus(userId: string): Promise<boolean> {
+    const user = await this.userModel.findOne({ _id: userId });
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user.panicMode;
   }
 }
