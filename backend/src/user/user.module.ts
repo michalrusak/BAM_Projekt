@@ -4,12 +4,16 @@ import { UserService } from './user.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Database } from 'src/enums/database.enum';
 import { UserSchema } from 'src/shared/models/user.model';
+import { NoteSchema } from 'src/shared/models/note.model';
 import { EndPoints } from 'src/enums/endPoints.enum';
 import { AuthMiddleware } from 'src/shared/middlewares/auth.middleware';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Database.user, schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: Database.user, schema: UserSchema },
+      { name: Database.note, schema: NoteSchema }
+    ]),
   ],
   controllers: [UserController],
   providers: [UserService],

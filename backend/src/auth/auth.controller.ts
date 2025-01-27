@@ -26,13 +26,21 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: 'User registered successfully',
-    type: MessageResponse,
+    schema: {
+      properties: {
+        message: { type: 'string' },
+        recoveryPhrase: { type: 'string' },
+      },
+    },
   })
   @ApiResponse({ status: 400, description: 'Invalid credentials' })
   @ApiResponse({ status: 409, description: 'User already exists' })
-  async register(@Body() payload: RegisterPayload): Promise<MessageResponse> {
-    await this.authService.register(payload);
-    return { message: 'User registered successfully' };
+  async register(@Body() payload: RegisterPayload) {
+    const user = await this.authService.register(payload);
+    return {
+      message: 'User registered successfully',
+      recoveryPhrase: user.recoveryPhrase,
+    };
   }
 
   @Post(EndPoints.login)
