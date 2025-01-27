@@ -37,7 +37,7 @@ export default function NotesScreen() {
   const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + "/notes";
 
   const { createNote, getNotes, updateNote, deleteNote } = useNotes();
-  const ENCRYPTION_KEY = "your-secret-key";
+  const ENCRYPTION_KEY = process.env.EXPO_PUBLIC_ENCRYPTION_KEY + "";
 
   useEffect(() => {
     loadNotes();
