@@ -11,10 +11,12 @@ import {
 } from "react-native";
 import { useNotes } from "../hooks/useNotes";
 import * as SecureStore from "expo-secure-store";
-import 'react-native-get-random-values';
+import "react-native-get-random-values";
 import { useRouter } from "expo-router";
-import * as FileSystem from 'expo-file-system';
-import CryptoJS from 'crypto-js';
+import * as FileSystem from "expo-file-system";
+import CryptoJS from "crypto-js";
+import { usePanicMode } from "../hooks/usePanicMode";
+
 interface Note {
   _id?: string;
   title: string;
@@ -35,11 +37,29 @@ export default function NotesScreen() {
   const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + "/notes";
 
   const { createNote, getNotes, updateNote, deleteNote } = useNotes();
-  const ENCRYPTION_KEY = "your-secret-key"; 
+  const ENCRYPTION_KEY = process.env.EXPO_PUBLIC_ENCRYPTION_KEY + "";
 
   useEffect(() => {
     loadNotes();
+    checkPanicStatus();
   }, []);
+  const { getPanicStatus } = usePanicMode();
+
+  const checkPanicStatus = async () => {
+    try {
+      const userId = await SecureStore.getItemAsync("userId");
+      if (userId) {
+        const isPanicMode = await getPanicStatus(userId);
+        if (isPanicMode) {
+          await SecureStore.deleteItemAsync("userId");
+          await SecureStore.deleteItemAsync("userToken");
+          router.replace("/login");
+        }
+      }
+    } catch (error) {
+      console.error("Error checking panic status:", error);
+    }
+  };
 
   const loadNotes = async () => {
     try {
@@ -65,23 +85,16 @@ export default function NotesScreen() {
     try {
       setIsLoading(true);
       const userId = await SecureStore.getItemAsync("userId");
-      
+
       if (!userId) {
         Alert.alert("Error", "User not authenticated");
         return;
       }
 
       if (editingNote?._id) {
-        await updateNote(
-          editingNote._id,
-          { title, content },
-          ENCRYPTION_KEY
-        );
+        await updateNote(editingNote._id, { title, content }, ENCRYPTION_KEY);
       } else {
-        await createNote(
-          { title, content, userId },
-          ENCRYPTION_KEY
-        );
+        await createNote({ title, content, userId }, ENCRYPTION_KEY);
       }
 
       setModalVisible(false);
@@ -108,19 +121,19 @@ export default function NotesScreen() {
       setIsLoading(true);
       const backupFileName = "notes_backup.json"; // Nazwa pliku kopii zapasowej
       const backupFilePath = `${FileSystem.documentDirectory}${backupFileName}`;
-  
+
       // Tworzenie zawartości kopii zapasowej
       const encryptedNotes = notes.map((note) => ({
         ...note,
         content: CryptoJS.AES.encrypt(note.content, ENCRYPTION_KEY).toString(),
       }));
       const backupContent = JSON.stringify(encryptedNotes);
-  
+
       // Zapisywanie do lokalnego pliku
       await FileSystem.writeAsStringAsync(backupFilePath, backupContent, {
         encoding: FileSystem.EncodingType.UTF8,
       });
-  
+
       Alert.alert("Backup", `Backup został zapisany w ${backupFilePath}`);
     } catch (error) {
       Alert.alert("Error", "Nie udało się utworzyć kopii zapasowej.");
@@ -134,25 +147,27 @@ export default function NotesScreen() {
       setIsLoading(true);
       const backupFileName = "notes_backup.json"; // Nazwa pliku kopii zapasowej
       const backupFilePath = `${FileSystem.documentDirectory}${backupFileName}`;
-  
+
       // Sprawdzenie, czy plik istnieje
       const fileInfo = await FileSystem.getInfoAsync(backupFilePath);
       if (!fileInfo.exists) {
         Alert.alert("Restore", "Nie znaleziono kopii zapasowej.");
         return;
       }
-  
+
       // Odczyt zawartości pliku
       const backupContent = await FileSystem.readAsStringAsync(backupFilePath, {
         encoding: FileSystem.EncodingType.UTF8,
       });
-  
+
       // Odszyfrowanie notatek
       const decryptedNotes = JSON.parse(backupContent).map((note: any) => ({
         ...note,
-        content: CryptoJS.AES.decrypt(note.content, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8),
+        content: CryptoJS.AES.decrypt(note.content, ENCRYPTION_KEY).toString(
+          CryptoJS.enc.Utf8
+        ),
       }));
-  
+
       setNotes(decryptedNotes);
       Alert.alert("Restore", "Notatki zostały przywrócone z kopii zapasowej.");
     } catch (error) {
@@ -168,7 +183,7 @@ export default function NotesScreen() {
       await SecureStore.deleteItemAsync("userToken");
       // Usuwamy też userId, jeśli chcesz całkowicie wyczyścić dane użytkownika
       await SecureStore.deleteItemAsync("userId");
-      
+
       Alert.alert("Logged out", "You have been logged out.");
       router.push("/login");
     } catch (error) {
@@ -192,24 +207,24 @@ export default function NotesScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity
-  style={styles.button2}
-  onPress={handleCreateBackup}
-  disabled={isLoading}
->
-  <Text style={styles.buttonText2}>
-    {isLoading ? "Creating Backup..." : "Create Encrypted Backup"}
-  </Text>
-</TouchableOpacity>
+        style={styles.button2}
+        onPress={handleCreateBackup}
+        disabled={isLoading}
+      >
+        <Text style={styles.buttonText2}>
+          {isLoading ? "Creating Backup..." : "Create Encrypted Backup"}
+        </Text>
+      </TouchableOpacity>
 
-<TouchableOpacity
-  style={styles.button2}
-  onPress={handleRestoreBackup}
-  disabled={isLoading}
->
-  <Text style={styles.buttonText2}>
-    {isLoading ? "Restoring..." : "Restore Notes from Backup"}
-  </Text>
-</TouchableOpacity>
+      <TouchableOpacity
+        style={styles.button2}
+        onPress={handleRestoreBackup}
+        disabled={isLoading}
+      >
+        <Text style={styles.buttonText2}>
+          {isLoading ? "Restoring..." : "Restore Notes from Backup"}
+        </Text>
+      </TouchableOpacity>
 
       <FlatList
         data={notes}
@@ -286,10 +301,7 @@ export default function NotesScreen() {
           </View>
         </View>
       </Modal>
-      <TouchableOpacity
-        style={styles.logoutButton}
-        onPress={handleLogout}
-      >
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Log out</Text>
       </TouchableOpacity>
     </View>
@@ -413,5 +425,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  
 });

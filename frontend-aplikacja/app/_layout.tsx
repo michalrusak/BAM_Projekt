@@ -15,6 +15,14 @@ export default function RootLayout() {
           headerBackVisible: false,
         }}
       />
+      <Stack.Screen
+        name="panicModeScreen"
+        options={{
+          headerTitle: "Panic Mode",
+          headerBackTitle: "Back",
+          headerBackVisible: false,
+        }}
+      />
     </Stack>
   );
 }
