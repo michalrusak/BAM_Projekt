@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import * as FileSystem from "expo-file-system";
 import CryptoJS from "crypto-js";
 import { usePanicMode } from "../hooks/usePanicMode";
+import * as LocalAuthentication from "expo-local-authentication";
 
 interface Note {
   _id?: string;
@@ -39,7 +40,46 @@ export default function NotesScreen() {
   const { createNote, getNotes, updateNote, deleteNote } = useNotes();
   const ENCRYPTION_KEY = process.env.EXPO_PUBLIC_ENCRYPTION_KEY + "";
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const authenticate = async () => {
+    try {
+      const hasBiometrics = await LocalAuthentication.hasHardwareAsync();
+      if (!hasBiometrics) {
+        Alert.alert("Error", "Biometric authentication not available");
+        return;
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Authenticate to view notes",
+        disableDeviceFallback: false,
+        fallbackLabel: "Use device passcode",
+      });
+
+      if (result.success) {
+        setIsAuthenticated(true);
+      } else {
+        // Retry authentication
+        Alert.alert("Authentication Failed", "Would you like to try again?", [
+          {
+            text: "Try Again",
+            onPress: authenticate,
+          },
+          {
+            text: "Cancel",
+            onPress: () => router.back(),
+            style: "cancel",
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("Authentication error:", error);
+      Alert.alert("Error", "Authentication failed. Please try again.");
+    }
+  };
+
   useEffect(() => {
+    authenticate();
     loadNotes();
     checkPanicStatus();
   }, []);
@@ -119,17 +159,15 @@ export default function NotesScreen() {
   const handleCreateBackup = async () => {
     try {
       setIsLoading(true);
-      const backupFileName = "notes_backup.json"; 
+      const backupFileName = "notes_backup.json";
       const backupFilePath = `${FileSystem.documentDirectory}${backupFileName}`;
 
-      
       const encryptedNotes = notes.map((note) => ({
         ...note,
         content: CryptoJS.AES.encrypt(note.content, ENCRYPTION_KEY).toString(),
       }));
       const backupContent = JSON.stringify(encryptedNotes);
 
-     
       await FileSystem.writeAsStringAsync(backupFilePath, backupContent, {
         encoding: FileSystem.EncodingType.UTF8,
       });
@@ -145,22 +183,19 @@ export default function NotesScreen() {
   const handleRestoreBackup = async () => {
     try {
       setIsLoading(true);
-      const backupFileName = "notes_backup.json"; 
+      const backupFileName = "notes_backup.json";
       const backupFilePath = `${FileSystem.documentDirectory}${backupFileName}`;
 
-      
       const fileInfo = await FileSystem.getInfoAsync(backupFilePath);
       if (!fileInfo.exists) {
         Alert.alert("Restore", "Nie znaleziono kopii zapasowej.");
         return;
       }
 
-     
       const backupContent = await FileSystem.readAsStringAsync(backupFilePath, {
         encoding: FileSystem.EncodingType.UTF8,
       });
 
-      
       const decryptedNotes = JSON.parse(backupContent).map((note: any) => ({
         ...note,
         content: CryptoJS.AES.decrypt(note.content, ENCRYPTION_KEY).toString(
@@ -179,9 +214,8 @@ export default function NotesScreen() {
 
   const handleLogout = async () => {
     try {
-      
       await SecureStore.deleteItemAsync("userToken");
-      
+
       await SecureStore.deleteItemAsync("userId");
 
       Alert.alert("Logged out", "You have been logged out.");
@@ -196,6 +230,17 @@ export default function NotesScreen() {
     setContent("");
     setEditingNote(null);
   };
+
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.authText}>Authentication required</Text>
+        <TouchableOpacity style={styles.authButton} onPress={authenticate}>
+          <Text style={styles.authButtonText}>Authenticate</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -401,7 +446,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   logoutButton: {
-    backgroundColor: "#FF3B30", 
+    backgroundColor: "#FF3B30",
     padding: 15,
     borderRadius: 10,
     marginBottom: 20,
@@ -414,7 +459,7 @@ const styles = StyleSheet.create({
   },
 
   button2: {
-    backgroundColor: "#007AFF", 
+    backgroundColor: "#007AFF",
     padding: 15,
     borderRadius: 10,
     marginBottom: 20,
@@ -422,6 +467,22 @@ const styles = StyleSheet.create({
   buttonText2: {
     color: "white",
     textAlign: "center",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  authText: {
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  authButton: {
+    backgroundColor: "#007AFF",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  authButtonText: {
+    color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
   },
