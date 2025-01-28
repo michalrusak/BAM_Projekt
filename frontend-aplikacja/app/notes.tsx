@@ -119,17 +119,17 @@ export default function NotesScreen() {
   const handleCreateBackup = async () => {
     try {
       setIsLoading(true);
-      const backupFileName = "notes_backup.json"; // Nazwa pliku kopii zapasowej
+      const backupFileName = "notes_backup.json"; 
       const backupFilePath = `${FileSystem.documentDirectory}${backupFileName}`;
 
-      // Tworzenie zawartości kopii zapasowej
+      
       const encryptedNotes = notes.map((note) => ({
         ...note,
         content: CryptoJS.AES.encrypt(note.content, ENCRYPTION_KEY).toString(),
       }));
       const backupContent = JSON.stringify(encryptedNotes);
 
-      // Zapisywanie do lokalnego pliku
+     
       await FileSystem.writeAsStringAsync(backupFilePath, backupContent, {
         encoding: FileSystem.EncodingType.UTF8,
       });
@@ -145,22 +145,22 @@ export default function NotesScreen() {
   const handleRestoreBackup = async () => {
     try {
       setIsLoading(true);
-      const backupFileName = "notes_backup.json"; // Nazwa pliku kopii zapasowej
+      const backupFileName = "notes_backup.json"; 
       const backupFilePath = `${FileSystem.documentDirectory}${backupFileName}`;
 
-      // Sprawdzenie, czy plik istnieje
+      
       const fileInfo = await FileSystem.getInfoAsync(backupFilePath);
       if (!fileInfo.exists) {
         Alert.alert("Restore", "Nie znaleziono kopii zapasowej.");
         return;
       }
 
-      // Odczyt zawartości pliku
+     
       const backupContent = await FileSystem.readAsStringAsync(backupFilePath, {
         encoding: FileSystem.EncodingType.UTF8,
       });
 
-      // Odszyfrowanie notatek
+      
       const decryptedNotes = JSON.parse(backupContent).map((note: any) => ({
         ...note,
         content: CryptoJS.AES.decrypt(note.content, ENCRYPTION_KEY).toString(
@@ -179,9 +179,9 @@ export default function NotesScreen() {
 
   const handleLogout = async () => {
     try {
-      // Usuwamy token, który jest odpowiedzialny za autentykację
+      
       await SecureStore.deleteItemAsync("userToken");
-      // Usuwamy też userId, jeśli chcesz całkowicie wyczyścić dane użytkownika
+      
       await SecureStore.deleteItemAsync("userId");
 
       Alert.alert("Logged out", "You have been logged out.");
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   logoutButton: {
-    backgroundColor: "#FF3B30", // Red color for logout
+    backgroundColor: "#FF3B30", 
     padding: 15,
     borderRadius: 10,
     marginBottom: 20,
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
   },
 
   button2: {
-    backgroundColor: "#007AFF", // Niebieski kolor dla obu przycisków
+    backgroundColor: "#007AFF", 
     padding: 15,
     borderRadius: 10,
     marginBottom: 20,

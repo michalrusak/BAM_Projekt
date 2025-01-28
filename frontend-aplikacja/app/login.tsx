@@ -11,9 +11,13 @@ import { useRouter } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { usePanicMode } from "@/hooks/usePanicMode";
+import * as SecureStore from "expo-secure-store";
+
 
 export default function Login() {
   const { storeAuthData } = useAuth();
+  const { getPanicStatus } = usePanicMode();  
   const router = useRouter();
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
@@ -40,11 +44,26 @@ export default function Login() {
       });
 
       const data = await response.json();
-
+      
+      
+      
       if (response.ok) {
-        await storeAuthData(data.token);
-        Alert.alert("Sukces", "Zalogowano pomyślnie");
-        router.push("/notes");
+        try {
+          await storeAuthData(data.token);
+          const userId = await SecureStore.getItemAsync("userId");
+          const isPanicActive = await getPanicStatus(userId!);
+          if (isPanicActive)  {
+            Alert.alert("Błąd", data.message || "Twoje konto zostało zdezaktywowane.");
+          }
+          else {
+            Alert.alert("Sukces", "Zalogowano pomyślnie");
+            router.push("/notes");
+          }
+          }
+          catch {
+            Alert.alert("Błąd", data.message || "Twoje konto zostało zdezaktywowane.");
+        }
+        
       } else {
         Alert.alert("Błąd", data.message || "Wystąpił błąd podczas logowania");
       }
@@ -188,7 +207,7 @@ const styles = StyleSheet.create({
   },
   homeButton: {
     marginTop: 12,
-    flexDirection: "row", // Ikona i tekst w jednej linii
+    flexDirection: "row", 
     alignItems: "center",
     justifyContent: "center",
   },
