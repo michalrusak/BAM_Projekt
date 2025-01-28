@@ -49,15 +49,28 @@ export const usePanicMode = () => {
     }
   };
 
-  const getPanicStatus = async (userId: string) => {
+  const getPanicStatus = async (userId: string | undefined) => {
     setIsLoading(true);
     try {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+  
+      if (typeof userId !== 'string' || userId.length !== 24) {
+        throw new Error('Invalid user ID format');
+      }
+  
       const response = await fetch(`${API_URL}/panic-status/${userId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch panic status');
+      }
+  
       const data = await response.json();
       return data.panicMode;
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
-      throw err;
+      return false;
     } finally {
       setIsLoading(false);
     }
